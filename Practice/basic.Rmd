@@ -1,0 +1,105 @@
+---
+title: "Time Series"
+date: "2017年03月30日"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+#1.好用套件
+library(zoo);library(xts)
+as.zoo();as.xts()
+
+
+```{r}
+prices <- c(132.45, 130.85, 130.00, 129.55, 130.85)
+dates <- as.Date(c("2010-01-04", "2010-01-05", "2010-01-06", "2010-01-07", "2010-01-08"))
+ibm.daily <- zoo(prices, dates)
+print(ibm.daily)
+seconds = c(9.5, 9.500278, 9.500556, 9.500833, 9.501111) #1秒 = 0.000277778
+ibm.sec = zoo(prices, seconds)
+print(ibm.sec)
+```
+coredata(ibm.daily)
+index(ibm.daily)
+
+#2.繪製
+
+```{r}
+y = matrix(c(tw2330$Close[1:1000],tw2330$Adj.Close[1:1000]),byrow = F,ncol = 2) #用行來塞入矩陣!!
+tw2330.infl = zoo(y,tw2330$Date[1:1000])
+plot(tw2330.infl,screens = 1,lty=c('dotted','solid'),col = c('blue','green'),xlab = "Date", ylab = "Price", ylim = range(coredata(tw2330.infl))) #lty設定類型,ylim設定相同y軸範圍as
+
+legend(as.Date("2011-08-01"),145,c("Hist","Adj"),lty=c('dotted','solid')) #x,y座標,標題,線段
+
+```
+
+#3.查看觀測值
+```{r}
+first(as.xts(tw2330.infl),"3 weeks") #xts套件之功能
+lsst(as.xts(tw2330.infl),"month")
+```
+#4.選取子序列
+
+```{r}
+tw2330.infl[seq(as.Date("2012-01-01"),as.Date("2012-02-05"),by = 2)]
+window(tw2330.infl, start = as.Date("2012-01-01"), end = as.Date("2012-02-05")) #Time Windows
+
+```
+#5.合併時間序列
+
+```{r}
+cpi = read.csv("data/cpispl.csv", header = T)
+a = unlist(cpi[6,2:13])
+unname(a) #網上下載CPI資料，並整理
+
+zoo(a,seq(as.Date("2015-01-01"),as.Date("2015-12-01"),by=31))
+```
+```{r}
+merge(tw2330.infl, cpi)
+
+merge(tw2330.infl, cpi)[as.Date("2015-01-01")] #確定是否合併成功
+tail(na.locf(merge(tw2330.infl, cpi))) #更好的方法
+merge(tw2330.infl,cpi,all=F) #選取交集(intersection)
+
+```
+#6.填充na
+```{r}
+dates = seq(as.Date("2011-08-01"),as.Date("2015-12-01"),by=1)
+empty = zoo(, dates) #產生含有日期的zoo物件，以備日後處理
+filled.cpi = merge(cpi, empty, all =T) 
+filled.cpi = na.locf(filled.cpi)
+filled.ibm = na.locf(merge(ibm, zoo(, index(cpi)))) #將ibm日股價資料，包含所有cpi資料日期
+merge(filled.ibm, cpi , all =F) #1對1合併
+```
+
+#7.時間序列的日期前後移動
+```{r}
+lag(ibm.daily, k =1, na.pad = T)
+lag(ibm.daily, k =-1, na.pad = T)
+```
+#8.逐次差分
+```{r}
+diff(ibm.daily)
+diff(cpi, lag = 12) #YoY的計算方法
+```
+
+
+
+
+
+
+
+
+
+
+
